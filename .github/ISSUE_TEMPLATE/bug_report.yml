@@ -1,0 +1,68 @@
+name: Bug report
+description: Something is broken or behaves unexpectedly.
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! Before filing, please confirm you are running
+        **Logic Pro Creator Studio** (subscription edition). If you are using
+        the classic perpetual-license Logic Pro, the upstream project at
+        [koltyj/logic-pro-mcp](https://github.com/koltyj/logic-pro-mcp) is
+        what you want.
+
+  - type: input
+    id: version
+    attributes:
+      label: logic-pro-mcp-creator version
+      description: Output of `LogicProMCP --version` or the git tag you built from.
+      placeholder: "1.0.0"
+    validations:
+      required: true
+
+  - type: input
+    id: logic-version
+    attributes:
+      label: Logic Pro Creator Studio version
+      description: Logic Pro → About Logic Pro.
+      placeholder: "e.g. 11.x"
+    validations:
+      required: true
+
+  - type: input
+    id: macos-version
+    attributes:
+      label: macOS version
+      description: Apple menu → About This Mac.
+      placeholder: "e.g. 14.5 (Sonoma)"
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What command did you run, and what did you expect vs. observe?
+      placeholder: |
+        1. Called `logic_tracks("mute", {index: 2, enabled: true})`
+        2. Expected: track 2 muted.
+        3. Actual: error "Cannot find Mute button on track 2".
+    validations:
+      required: true
+
+  - type: textarea
+    id: ax-dump
+    attributes:
+      label: AX tree dump (highly recommended)
+      description: |
+        Run `logic_system("ax_dump", {depth: 4})` and paste the output.
+        This is the single most useful artifact for diagnosing AX-path drift.
+      render: text
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Server logs
+      description: Any relevant log output from the MCP server.
+      render: text

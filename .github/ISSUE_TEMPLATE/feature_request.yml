@@ -1,0 +1,26 @@
+name: Feature request
+description: Suggest a new command, resource, or behavior.
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the workflow or use case that is missing / awkward today.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: |
+        A rough sketch of the API / command / tool you would like to see.
+        Example: `logic_tracks("freeze", {index: 3})` — freezes a track to audio.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Other approaches you thought about and why they were not enough.
