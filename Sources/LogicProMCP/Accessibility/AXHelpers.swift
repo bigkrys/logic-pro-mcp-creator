@@ -156,4 +156,24 @@ enum AXHelpers {
     static func getDescription(_ element: AXUIElement) -> String? {
         getAttribute(element, kAXDescriptionAttribute)
     }
+
+    /// Get the on-screen position (top-left) of an element in screen coordinates.
+    static func getPosition(_ element: AXUIElement) -> CGPoint? {
+        var raw: AnyObject?
+        guard AXUIElementCopyAttributeValue(element, kAXPositionAttribute as CFString, &raw) == .success,
+              let axVal = raw, CFGetTypeID(axVal) == AXValueGetTypeID() else { return nil }
+        var point = CGPoint.zero
+        AXValueGetValue(axVal as! AXValue, .cgPoint, &point)
+        return point
+    }
+
+    /// Get the on-screen size of an element.
+    static func getSize(_ element: AXUIElement) -> CGSize? {
+        var raw: AnyObject?
+        guard AXUIElementCopyAttributeValue(element, kAXSizeAttribute as CFString, &raw) == .success,
+              let axVal = raw, CFGetTypeID(axVal) == AXValueGetTypeID() else { return nil }
+        var size = CGSize.zero
+        AXValueGetValue(axVal as! AXValue, .cgSize, &size)
+        return size
+    }
 }

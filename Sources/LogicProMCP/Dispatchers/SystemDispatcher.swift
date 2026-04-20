@@ -81,6 +81,12 @@ struct SystemDispatcher {
             let helpText = Self.helpText(for: category)
             return CallTool.Result(content: [.text(helpText)], isError: false)
 
+        case "ax_dump":
+            // Diagnostic: dump the AX tree to identify element roles/identifiers
+            let depth = params["depth"]?.intValue ?? 3
+            let dump = AXLogicProElements.dumpTree(maxDepth: depth)
+            return CallTool.Result(content: [.text(dump)], isError: false)
+
         default:
             return CallTool.Result(
                 content: [.text("Unknown system command: \(command). Available: health, permissions, refresh_cache, help")],

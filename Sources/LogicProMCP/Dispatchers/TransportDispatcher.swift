@@ -75,9 +75,14 @@ struct TransportDispatcher {
             return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
 
         case "set_tempo":
-            let tempo = params["tempo"]?.doubleValue
-                ?? params["bpm"]?.doubleValue
-                ?? 120.0
+            // Accept both float (.double) and integer (.int) — MCP SDK uses strict type cases
+            let tempoRaw: Double?
+            if let d = params["tempo"]?.doubleValue { tempoRaw = d }
+            else if let i = params["tempo"]?.intValue { tempoRaw = Double(i) }
+            else if let d = params["bpm"]?.doubleValue { tempoRaw = d }
+            else if let i = params["bpm"]?.intValue { tempoRaw = Double(i) }
+            else { tempoRaw = nil }
+            let tempo = tempoRaw ?? 120.0
             let result = await router.route(
                 operation: "transport.set_tempo",
                 params: ["bpm": String(tempo)]

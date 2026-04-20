@@ -43,6 +43,20 @@ struct MIDIDispatcher {
         cache: StateCache
     ) async -> CallTool.Result {
         switch command {
+        case "send_sequence":
+            guard let sequenceValue = params["sequence"] else {
+                return CallTool.Result(content: [.text("send_sequence requires 'sequence' array")], isError: true)
+            }
+            guard let jsonData = try? JSONEncoder().encode(sequenceValue),
+                  let json = String(data: jsonData, encoding: .utf8) else {
+                return CallTool.Result(content: [.text("send_sequence: failed to serialize sequence")], isError: true)
+            }
+            let result = await router.route(
+                operation: "midi.send_sequence",
+                params: ["sequence": json]
+            )
+            return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
+
         case "send_note":
             let note = params["note"]?.intValue ?? 60
             let velocity = params["velocity"]?.intValue ?? 100

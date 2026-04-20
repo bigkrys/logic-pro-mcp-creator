@@ -62,6 +62,51 @@ actor CoreMIDIChannel: Channel {
             await engine.sendSysEx(MMCCommands.locate(hours: h, minutes: m, seconds: s, frames: f, subframes: sf))
             return .success("MMC locate sent to \(h):\(m):\(s):\(f).\(sf)")
 
+        // MARK: - Sequence Send
+
+        case "midi.send_sequence":
+            guard let sequenceJSON = params["sequence"] else {
+                return .error("send_sequence requires 'sequence' (JSON array of note events)")
+            }
+            guard let data = sequenceJSON.data(using: .utf8),
+                  let rawEvents = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] else {
+                return .error("send_sequence: 'sequence' must be a valid JSON array of objects")
+            }
+            // Parse into (startNs, note, velocity, durationNs, channel).
+            // Count invalid events so the caller knows something was skipped.
+            var skipped = 0
+            let parsed: [(UInt64, UInt8, UInt8, UInt64, UInt8)] = rawEvents.compactMap { ev in
+                let noteRaw = (ev["note"] as? Int) ?? (ev["note"] as? Double).map(Int.init) ?? -1
+                guard noteRaw >= 0 && noteRaw <= 127 else { skipped += 1; return nil }
+                let timeMsD: Double = (ev["time_ms"] as? Double) ?? Double(ev["time_ms"] as? Int ?? 0)
+                let durMsD: Double = (ev["duration_ms"] as? Double) ?? Double(ev["duration_ms"] as? Int ?? 250)
+                let vel = (ev["velocity"] as? Int) ?? (ev["velocity"] as? Double).map(Int.init) ?? 100
+                let ch  = (ev["channel"]  as? Int) ?? (ev["channel"]  as? Double).map(Int.init) ?? 0
+                return (
+                    UInt64(max(0, timeMsD) * 1_000_000),
+                    UInt8(clamping: noteRaw),
+                    UInt8(clamping: max(0, vel)),
+                    UInt64(max(1, durMsD)  * 1_000_000),
+                    UInt8(clamping: max(0, ch))
+                )
+            }
+            guard !parsed.isEmpty else {
+                return .error("send_sequence: no valid note events found in sequence (all \(rawEvents.count) entries rejected — check 'note' is 0-127)")
+            }
+            let capturedEngine = engine
+            await withTaskGroup(of: Void.self) { group in
+                for (startNs, note, velocity, durNs, channel) in parsed {
+                    group.addTask {
+                        if startNs > 0 { try? await Task.sleep(nanoseconds: startNs) }
+                        await capturedEngine.sendNoteOn(channel: channel, note: note, velocity: velocity)
+                        try? await Task.sleep(nanoseconds: durNs)
+                        await capturedEngine.sendNoteOff(channel: channel, note: note)
+                    }
+                }
+            }
+            let skipNote = skipped > 0 ? " (\(skipped) invalid event\(skipped == 1 ? "" : "s") skipped)" : ""
+            return .success("Sequence complete: \(parsed.count) notes sent\(skipNote)")
+
         // MARK: - Note Send
 
         case "midi.send_note":

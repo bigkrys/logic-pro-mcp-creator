@@ -44,16 +44,20 @@ struct MixerDispatcher {
     ) async -> CallTool.Result {
         switch command {
         case "set_volume":
-            let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 0
-            let value = params["value"]?.doubleValue ?? params["volume"]?.doubleValue ?? 0.0
+            let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 1
+            let valueRaw = params["value"]?.doubleValue ?? params["value"]?.intValue.map(Double.init)
+                ?? params["volume"]?.doubleValue ?? params["volume"]?.intValue.map(Double.init)
+            let value = valueRaw ?? 0.0
             let result = await router.route(
                 operation: "mixer.set_volume",
-                params: ["index": String(track), "volume": String(value)]
+                // Pass all key aliases: OSC expects "track"+"volume", AX expects "index"+"value"
+                params: ["index": String(track), "track": String(track),
+                         "value": String(value), "volume": String(value)]
             )
             return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
 
         case "set_pan":
-            let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 0
+            let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 1
             let value = params["value"]?.doubleValue ?? params["pan"]?.doubleValue ?? 0.0
             let result = await router.route(
                 operation: "mixer.set_pan",
@@ -62,7 +66,7 @@ struct MixerDispatcher {
             return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
 
         case "set_send":
-            let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 0
+            let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 1
             let bus = params["bus"]?.intValue ?? params["send_index"]?.intValue ?? 0
             let value = params["value"]?.doubleValue ?? params["level"]?.doubleValue ?? 0.0
             let result = await router.route(
@@ -72,7 +76,7 @@ struct MixerDispatcher {
             return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
 
         case "set_output":
-            let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 0
+            let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 1
             let output = params["output"]?.stringValue ?? ""
             let result = await router.route(
                 operation: "mixer.set_output",
@@ -81,7 +85,7 @@ struct MixerDispatcher {
             return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
 
         case "set_input":
-            let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 0
+            let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 1
             let input = params["input"]?.stringValue ?? ""
             let result = await router.route(
                 operation: "mixer.set_input",
@@ -98,7 +102,7 @@ struct MixerDispatcher {
             return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
 
         case "toggle_eq":
-            let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 0
+            let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 1
             let result = await router.route(
                 operation: "mixer.toggle_eq",
                 params: ["index": String(track)]
@@ -106,7 +110,7 @@ struct MixerDispatcher {
             return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
 
         case "reset_strip":
-            let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 0
+            let track = params["track"]?.intValue ?? params["index"]?.intValue ?? 1
             let result = await router.route(
                 operation: "mixer.reset_strip",
                 params: ["index": String(track)]
@@ -114,7 +118,7 @@ struct MixerDispatcher {
             return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
 
         case "insert_plugin":
-            let track = params["track"]?.intValue ?? params["track_index"]?.intValue ?? 0
+            let track = params["track"]?.intValue ?? params["track_index"]?.intValue ?? 1
             let slot = params["slot"]?.intValue ?? 0
             let name = params["name"]?.stringValue ?? params["plugin_name"]?.stringValue ?? ""
             let result = await router.route(
@@ -124,7 +128,7 @@ struct MixerDispatcher {
             return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
 
         case "bypass_plugin":
-            let track = params["track"]?.intValue ?? params["track_index"]?.intValue ?? 0
+            let track = params["track"]?.intValue ?? params["track_index"]?.intValue ?? 1
             let slot = params["slot"]?.intValue ?? 0
             let bypassed = params["bypassed"]?.boolValue ?? true
             let result = await router.route(

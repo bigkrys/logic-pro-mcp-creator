@@ -1,3 +1,4 @@
+import AppKit
 import ApplicationServices
 import Foundation
 
@@ -61,7 +62,7 @@ actor AccessibilityChannel: Channel {
         case "track.set_arm":
             return setTrackToggle(params: params, button: "Record")
         case "track.rename":
-            return renameTrack(params: params)
+            return await renameTrack(params: params)
         case "track.set_color":
             return .error("Track color setting not supported via AX")
 
@@ -151,8 +152,8 @@ actor AccessibilityChannel: Channel {
     }
 
     private func setTempo(params: [String: String]) -> ChannelResult {
-        guard let tempoStr = params["tempo"], let _ = Double(tempoStr) else {
-            return .error("Missing or invalid 'tempo' parameter")
+        guard let tempoStr = params["bpm"] ?? params["tempo"], let _ = Double(tempoStr) else {
+            return .error("Missing or invalid 'tempo' / 'bpm' parameter")
         }
         guard let transport = AXLogicProElements.getTransportBar() else {
             return .error("Cannot locate transport bar")
@@ -236,19 +237,151 @@ actor AccessibilityChannel: Channel {
         return .success("{\"track\":\(index),\"toggled\":\"\(buttonName)\"}")
     }
 
-    private func renameTrack(params: [String: String]) -> ChannelResult {
+    /// Localized titles for the "Rename" context-menu item across Logic Pro UI languages.
+    /// Used as a substring match against `kAXTitleAttribute`.
+    private static let renameMenuTitles: [String] = [
+        "rename",           // English
+        "重命名", "重新命名",   // Simplified / Traditional Chinese
+        "名前の変更", "名称変更",  // Japanese
+        "이름 변경",          // Korean
+        "renommer",         // French
+        "umbenennen",       // German
+        "cambiar nombre", "renombrar",  // Spanish
+        "rinomina",         // Italian
+        "renomear",         // Portuguese
+        "переименовать"     // Russian
+    ]
+
+    private func renameTrack(params: [String: String]) async -> ChannelResult {
         guard let indexStr = params["index"], let index = Int(indexStr),
               let name = params["name"] else {
             return .error("Missing 'index' or 'name' parameter")
         }
-        guard let field = AXLogicProElements.findTrackNameField(trackIndex: index) else {
-            return .error("Cannot find name field for track \(index)")
+        guard let trackRow = AXLogicProElements.findTrackHeader(at: index) else {
+            return .error("Cannot find track row for track \(index)")
         }
-        // Double-click to enter edit mode, then set value
-        AXHelpers.performAction(field, kAXPressAction)
-        AXHelpers.setAttribute(field, kAXValueAttribute, name as CFTypeRef)
-        AXHelpers.performAction(field, kAXConfirmAction)
+        guard let pid = ProcessUtils.logicProPID() else {
+            return .error("Logic Pro not running")
+        }
+        guard let rowPos = AXHelpers.getPosition(trackRow),
+              let rowSz = AXHelpers.getSize(trackRow) else {
+            return .error("Cannot determine screen position of track \(index)")
+        }
+
+        // Bring Logic Pro to foreground using the bundle ID from ServerConfig.
+        if let app = NSRunningApplication.runningApplications(
+            withBundleIdentifier: ServerConfig.logicProBundleID
+        ).first {
+            app.activate()  // macOS 14+: options-based activation is a no-op
+        }
+        try? await Task.sleep(nanoseconds: 200_000_000) // 0.2s
+
+        let clickPoint = CGPoint(x: rowPos.x + rowSz.width * 0.35, y: rowPos.y + rowSz.height * 0.5)
+
+        // Right-click to open context menu
+        postMouseEvent(at: clickPoint, type: .rightMouseDown, clickCount: 1, pid: pid)
+        postMouseEvent(at: clickPoint, type: .rightMouseUp,   clickCount: 1, pid: pid)
+        try? await Task.sleep(nanoseconds: 600_000_000) // 0.6s
+
+        // Find the localized rename item in the context menu via AX.
+        let renameItem: AXUIElement? = {
+            guard let root = AXLogicProElements.appRoot() else { return nil }
+            let items = AXHelpers.findAllDescendants(of: root, role: kAXMenuItemRole, maxDepth: 8)
+            return items.first { title in
+                let lowered = (AXHelpers.getTitle(title) ?? "").lowercased()
+                guard !lowered.isEmpty else { return false }
+                return Self.renameMenuTitles.contains { lowered.contains($0) }
+            }
+        }()
+
+        guard let item = renameItem else {
+            let menuDump: String = {
+                guard let root = AXLogicProElements.appRoot() else { return "no root" }
+                let items = AXHelpers.findAllDescendants(of: root, role: kAXMenuItemRole, maxDepth: 8)
+                let titles = items.compactMap { AXHelpers.getTitle($0) }.filter { !$0.isEmpty }
+                return titles.isEmpty ? "no menu items found" : titles.joined(separator: " | ")
+            }()
+            postRawKey(keyCode: KeyCode.escape, flags: [], pid: pid) // dismiss menu
+            return .error("No rename item found. Menu contained: \(menuDump)")
+        }
+
+        // Click the rename item
+        AXHelpers.performAction(item, kAXPressAction)
+        try? await Task.sleep(nanoseconds: 350_000_000) // 0.35s
+
+        // Save the user's clipboard contents so we can restore them after pasting.
+        let savedClipboard = snapshotClipboard()
+        defer { restoreClipboard(savedClipboard) }
+
+        NSPasteboard.general.clearContents()
+        NSPasteboard.general.setString(name, forType: .string)
+
+        postRawKey(keyCode: KeyCode.a, flags: .maskCommand, pid: pid)   // Cmd+A
+        try? await Task.sleep(nanoseconds: 80_000_000)  // 0.08s
+        postRawKey(keyCode: KeyCode.v, flags: .maskCommand, pid: pid)   // Cmd+V
+        try? await Task.sleep(nanoseconds: 80_000_000)  // 0.08s
+        postRawKey(keyCode: KeyCode.return_, flags: [], pid: pid)
+
+        // Give Logic Pro a moment to consume the paste before we restore the clipboard.
+        try? await Task.sleep(nanoseconds: 120_000_000) // 0.12s
+
         return .success("{\"track\":\(index),\"name\":\"\(name)\"}")
+    }
+
+    /// Capture the current general pasteboard contents so we can restore them
+    /// after a programmatic paste.
+    private func snapshotClipboard() -> [[NSPasteboard.PasteboardType: Data]] {
+        guard let items = NSPasteboard.general.pasteboardItems else { return [] }
+        return items.map { item in
+            var snapshot: [NSPasteboard.PasteboardType: Data] = [:]
+            for type in item.types {
+                if let data = item.data(forType: type) {
+                    snapshot[type] = data
+                }
+            }
+            return snapshot
+        }
+    }
+
+    private func restoreClipboard(_ snapshot: [[NSPasteboard.PasteboardType: Data]]) {
+        guard !snapshot.isEmpty else { return }
+        let pb = NSPasteboard.general
+        pb.clearContents()
+        let items: [NSPasteboardItem] = snapshot.map { dict in
+            let item = NSPasteboardItem()
+            for (type, data) in dict {
+                item.setData(data, forType: type)
+            }
+            return item
+        }
+        pb.writeObjects(items)
+    }
+
+    /// Named virtual key codes used by the rename flow (and any future CGEvent key posts).
+    /// Values are Carbon HIToolbox virtual key codes — unchanged across macOS versions.
+    private enum KeyCode {
+        static let a: CGKeyCode = 0
+        static let v: CGKeyCode = 9
+        static let `return_`: CGKeyCode = 36
+        static let escape: CGKeyCode = 53
+    }
+
+    private func postMouseEvent(at point: CGPoint, type: CGEventType, clickCount: Int, pid: pid_t) {
+        guard let src = CGEventSource(stateID: .hidSystemState),
+              let event = CGEvent(mouseEventSource: src, mouseType: type,
+                                  mouseCursorPosition: point, mouseButton: .left) else { return }
+        event.setIntegerValueField(.mouseEventClickState, value: Int64(clickCount))
+        event.postToPid(pid)
+    }
+
+    private func postRawKey(keyCode: CGKeyCode, flags: CGEventFlags, pid: pid_t) {
+        guard let src = CGEventSource(stateID: .hidSystemState),
+              let down = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: true),
+              let up = CGEvent(keyboardEventSource: src, virtualKey: keyCode, keyDown: false) else { return }
+        down.flags = flags
+        up.flags = flags
+        down.postToPid(pid)
+        up.postToPid(pid)
     }
 
     // MARK: - Mixer

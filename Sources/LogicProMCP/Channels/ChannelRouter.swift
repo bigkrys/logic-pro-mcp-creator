@@ -20,7 +20,7 @@ actor ChannelRouter {
         "transport.fast_forward":     [.coreMIDI, .cgEvent],
         "transport.toggle_cycle":     [.cgEvent, .accessibility],
         "transport.toggle_metronome": [.cgEvent, .accessibility],
-        "transport.set_tempo":        [.osc, .accessibility],
+        "transport.set_tempo":        [.accessibility, .osc],
         "transport.get_state":        [.accessibility],
         "transport.goto_position":    [.coreMIDI, .cgEvent],
         "transport.set_cycle_range":  [.accessibility],
@@ -58,6 +58,7 @@ actor ChannelRouter {
         "mixer.reset_strip":          [.accessibility],
 
         // MIDI — CoreMIDI only
+        "midi.send_sequence":         [.coreMIDI],
         "midi.send_note":             [.coreMIDI],
         "midi.send_chord":            [.coreMIDI],
         "midi.send_cc":               [.coreMIDI],
@@ -102,7 +103,7 @@ actor ChannelRouter {
         "edit.normalize":             [.cgEvent, .accessibility],
 
         // Project — AppleScript for lifecycle, keyboard for save/bounce
-        "project.new":                [.appleScript],
+        "project.new":                [.cgEvent, .appleScript],
         "project.open":               [.appleScript],
         "project.save":               [.cgEvent, .appleScript],
         "project.save_as":            [.cgEvent],

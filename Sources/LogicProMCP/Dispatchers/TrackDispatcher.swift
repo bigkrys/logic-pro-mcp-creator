@@ -104,7 +104,7 @@ struct TrackDispatcher {
             return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
 
         case "rename":
-            let index = params["index"]?.intValue ?? 0
+            let index = params["index"]?.intValue ?? 1  // 1-based: track 1 = first track
             let name = params["name"]?.stringValue ?? ""
             let result = await router.route(
                 operation: "track.rename",
@@ -113,7 +113,7 @@ struct TrackDispatcher {
             return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
 
         case "mute":
-            let index = params["index"]?.intValue ?? 0
+            let index = params["index"]?.intValue ?? 1  // 1-based: track 1 = first track
             let enabled = params["enabled"]?.boolValue ?? true
             let result = await router.route(
                 operation: "track.set_mute",
@@ -122,7 +122,7 @@ struct TrackDispatcher {
             return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
 
         case "solo":
-            let index = params["index"]?.intValue ?? 0
+            let index = params["index"]?.intValue ?? 1  // 1-based: track 1 = first track
             let enabled = params["enabled"]?.boolValue ?? true
             let result = await router.route(
                 operation: "track.set_solo",
@@ -131,7 +131,7 @@ struct TrackDispatcher {
             return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
 
         case "arm":
-            let index = params["index"]?.intValue ?? 0
+            let index = params["index"]?.intValue ?? 1  // 1-based: track 1 = first track
             let enabled = params["enabled"]?.boolValue ?? true
             let result = await router.route(
                 operation: "track.set_arm",
@@ -140,7 +140,7 @@ struct TrackDispatcher {
             return CallTool.Result(content: [.text(result.message)], isError: !result.isSuccess)
 
         case "set_color":
-            let index = params["index"]?.intValue ?? 0
+            let index = params["index"]?.intValue ?? 1  // 1-based: track 1 = first track
             let color = params["color"]?.intValue ?? 0
             let result = await router.route(
                 operation: "track.set_color",
