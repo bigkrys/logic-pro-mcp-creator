@@ -1,11 +1,16 @@
-# Logic Pro MCP Server
+# Logic Pro MCP — Creator Studio Edition
 
 [![Swift 6.0+](https://img.shields.io/badge/Swift-6.0+-F05138.svg)](https://swift.org)
 [![macOS 14+](https://img.shields.io/badge/macOS-14+-000000.svg?logo=apple)](https://developer.apple.com/macos/)
 [![MCP SDK 0.10](https://img.shields.io/badge/MCP_SDK-0.10-blue.svg)](https://github.com/modelcontextprotocol/swift-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Edition: Creator Studio](https://img.shields.io/badge/Edition-Creator_Studio_(Subscription)-7B61FF.svg)](https://www.apple.com/logic-pro/)
 
-Bidirectional, stateful control of Logic Pro from AI assistants. Combines **5 native macOS control channels** (CoreMIDI, Accessibility, CGEvent, AppleScript, OSC) into a single MCP server with smart routing, fallback chains, and sub-millisecond transport latency.
+> **⚠️ Subscription edition only.** This fork is built **exclusively for Logic Pro Creator Studio** — Apple's subscription tier of Logic Pro. It targets the `Logic Pro Creator Studio` process name and UI, which differs from the classic perpetual-license build. If you are running the traditional (buy-once) Logic Pro, use the upstream project instead: [koltyj/logic-pro-mcp](https://github.com/koltyj/logic-pro-mcp).
+>
+> **Fork credit.** This project is a fork of [koltyj/logic-pro-mcp](https://github.com/koltyj/logic-pro-mcp) by Kolton Jacobs, with modifications by **Krys Liang** to adapt it to the Creator Studio subscription edition. The core architecture, channel routing, dispatcher tool design, and state-cache strategy are all the original author's work — all credit for the foundational design goes to Kolton. See [LICENSE](LICENSE) for full attribution (MIT).
+
+Bidirectional, stateful control of Logic Pro Creator Studio from AI assistants. Combines **5 native macOS control channels** (CoreMIDI, Accessibility, CGEvent, AppleScript, OSC) into a single MCP server with smart routing, fallback chains, and sub-millisecond transport latency.
 
 **8 tools, 7 resources, ~3k context tokens.** Not 100+ individual tools.
 
@@ -59,12 +64,12 @@ Each command routes through the fastest available channel, with automatic fallba
 ### Quick Install (Script)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/koltyj/logic-pro-mcp/main/Scripts/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/bigkrys/logic-pro-mcp-creator/main/Scripts/install.sh | bash
 ```
 
 ### Download Binary
 
-Grab the latest universal macOS binary from [GitHub Releases](https://github.com/koltyj/logic-pro-mcp/releases), then:
+Grab the latest universal macOS binary from [GitHub Releases](https://github.com/bigkrys/logic-pro-mcp-creator/releases), then:
 
 ```bash
 chmod +x LogicProMCP
@@ -76,8 +81,8 @@ sudo mv LogicProMCP /usr/local/bin/
 Requires Swift 6.0+ and macOS 14+.
 
 ```bash
-git clone https://github.com/koltyj/logic-pro-mcp.git
-cd logic-pro-mcp
+git clone https://github.com/bigkrys/logic-pro-mcp-creator.git
+cd logic-pro-mcp-creator
 swift build -c release
 # Binary at .build/release/LogicProMCP
 ```
@@ -85,7 +90,7 @@ swift build -c release
 ### Register with Claude Code
 
 ```bash
-claude mcp add --scope user logic-pro -- LogicProMCP
+claude mcp add --scope user logic-pro-creator -- LogicProMCP
 ```
 
 ### Claude Desktop (Manual Config)
@@ -95,7 +100,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
-    "logic-pro": {
+    "logic-pro-creator": {
       "command": "/usr/local/bin/LogicProMCP",
       "args": []
     }
@@ -201,6 +206,11 @@ Sources/LogicProMCP/
   Utilities/                 # Logging, permissions, process utils
 ```
 
+## Credits
+
+- **Original project**: [koltyj/logic-pro-mcp](https://github.com/koltyj/logic-pro-mcp) by Kolton Jacobs — architecture, channel routing, dispatcher design, state cache.
+- **Creator Studio fork**: [bigkrys/logic-pro-mcp-creator](https://github.com/bigkrys/logic-pro-mcp-creator) by Krys Liang — adaptation for the Logic Pro Creator Studio subscription edition (process name, UI element paths, install flow).
+
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE). Copyright © 2025 Kolton Jacobs, © 2026 Krys Liang.

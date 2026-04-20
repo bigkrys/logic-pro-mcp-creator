@@ -1,19 +1,20 @@
 {
-  "name": "logic-pro-mcp",
-  "display_name": "Logic Pro MCP Server",
-  "description": "Bidirectional, stateful control of Logic Pro from AI assistants. 8 dispatcher tools + 7 resources across 5 native macOS channels.",
-  "version": "0.1.0",
-  "author": "Kolton Jacobs",
+  "name": "logic-pro-mcp-creator",
+  "display_name": "Logic Pro MCP (Creator Studio Edition)",
+  "description": "Bidirectional, stateful control of Logic Pro Creator Studio (subscription edition) from AI assistants. 8 dispatcher tools + 7 resources across 5 native macOS channels. Fork of koltyj/logic-pro-mcp, adapted for the Creator Studio process.",
+  "version": "1.0.0",
+  "author": "Krys Liang",
+  "contributors": ["Kolton Jacobs (original author of logic-pro-mcp)"],
   "license": "MIT",
-  "homepage": "https://github.com/koltyj/logic-pro-mcp",
-  "repository": "https://github.com/koltyj/logic-pro-mcp",
+  "homepage": "https://github.com/bigkrys/logic-pro-mcp-creator",
+  "repository": "https://github.com/bigkrys/logic-pro-mcp-creator",
   "platforms": ["macos"],
   "runtime": "native",
   "installation": {
     "macos": {
       "command": "LogicProMCP",
       "args": [],
-      "download_url": "https://github.com/koltyj/logic-pro-mcp/releases/latest/download/LogicProMCP",
+      "download_url": "https://github.com/bigkrys/logic-pro-mcp-creator/releases/latest/download/LogicProMCP",
       "install_path": "/usr/local/bin/LogicProMCP"
     }
   },

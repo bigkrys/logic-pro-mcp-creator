@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO="koltyj/logic-pro-mcp"
+REPO="bigkrys/logic-pro-mcp-creator"
 BINARY_NAME="LogicProMCP"
 INSTALL_DIR="/usr/local/bin"
 
-echo "=== Logic Pro MCP Server — Install ==="
+echo "=== Logic Pro MCP (Creator Studio Edition) — Install ==="
 echo ""
 
 # Detect if running from cloned repo or via curl
@@ -50,15 +50,15 @@ echo "Checking macOS permissions..."
 echo ""
 if command -v claude &>/dev/null; then
     echo "Registering with Claude Code..."
-    claude mcp add --scope user logic-pro -- "$INSTALL_DIR/$BINARY_NAME" 2>/dev/null && \
+    claude mcp add --scope user logic-pro-creator -- "$INSTALL_DIR/$BINARY_NAME" 2>/dev/null && \
         echo "Registered." || echo "Registration skipped (may already exist)."
 else
     echo "Register with Claude Code:"
-    echo "  claude mcp add --scope user logic-pro -- $INSTALL_DIR/$BINARY_NAME"
+    echo "  claude mcp add --scope user logic-pro-creator -- $INSTALL_DIR/$BINARY_NAME"
 fi
 
 echo ""
 echo "Claude Desktop config (~/Library/Application Support/Claude/claude_desktop_config.json):"
-echo '  {"mcpServers":{"logic-pro":{"command":"'"$INSTALL_DIR/$BINARY_NAME"'","args":[]}}}'
+echo '  {"mcpServers":{"logic-pro-creator":{"command":"'"$INSTALL_DIR/$BINARY_NAME"'","args":[]}}}'
 echo ""
 echo "Done. Ensure Accessibility + Automation permissions are granted."

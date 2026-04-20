@@ -4,8 +4,8 @@ import Foundation
 /// All tunables live here — ports, timeouts, poll intervals.
 struct ServerConfig: Sendable {
     // MARK: - Server Identity
-    static let serverName = "logic-pro-mcp"
-    static let serverVersion = "0.1.0"
+    static let serverName = "logic-pro-mcp-creator"
+    static let serverVersion = "1.0.0"
 
     // MARK: - OSC
     static let oscSendPort: UInt16 = 7001    // Server → Logic Pro
@@ -42,6 +42,6 @@ struct ServerConfig: Sendable {
     static let channelHealthCheckTimeout: TimeInterval = 3.0
 
     // MARK: - Logic Pro
-    static let logicProBundleID = "com.apple.logic10"
-    static let logicProProcessName = "Logic Pro"
+    static let logicProBundleID = "com.apple.mobilelogic"
+    static let logicProProcessName = "Logic Pro Creator Studio"
 }
